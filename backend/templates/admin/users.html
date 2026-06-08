@@ -1,0 +1,73 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}Users &amp; Accounts{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">All Customer Accounts</div>
+    <div class="text-muted text-sm">{{ users|length }} total users</div>
+  </div>
+  <div class="table-wrap">
+    {% if users %}
+    <table class="smarttable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Account Number</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="text-muted text-sm">{{ loop.index }}</td>
+          <td style="font-weight:600;">{{ user.full_name }}</td>
+          <td class="text-muted">{{ user.email }}</td>
+          <td class="text-muted">{{ user.phone }}</td>
+          <td class="font-mono text-sm">{{ user.account.account_number if user.account else '—' }}</td>
+          <td class="font-mono">৳{{ "%.2f"|format(user.account.balance) if user.account else '0.00' }}</td>
+          <td>
+            {% if user.account and user.account.status == 'active' %}
+              <span class="topbar-badge badge-active">Active</span>
+            {% else %}
+              <span class="topbar-badge badge-frozen">Frozen</span>
+            {% endif %}
+          </td>
+          <td class="text-muted text-sm">{{ user.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            {% if user.account %}
+              {% if user.account.status == 'active' %}
+                <a href="{{ url_for('admin.freeze', user_id=user.id) }}"
+                   class="btn btn-warning btn-sm confirm-action"
+                   data-confirm="Freeze account {{ user.account.account_number }}?">
+                  🔒 Freeze
+                </a>
+              {% else %}
+                <a href="{{ url_for('admin.unfreeze', user_id=user.id) }}"
+                   class="btn btn-success btn-sm confirm-action"
+                   data-confirm="Unfreeze account {{ user.account.account_number }}?">
+                  ✅ Unfreeze
+                </a>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">👥</div>
+      <p>No customers registered yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
