@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block body %}
+<!-- Admin Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">💳 SmartBank</div>
+    <div class="brand-tagline">Admin Panel</div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar">A</div>
+    <div class="user-name">{{ current_user.full_name }}</div>
+    <div class="user-acc">Administrator</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <div class="nav-section-label">Management</div>
+    <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint == 'admin.users' %}active{% endif %}">
+      <span class="nav-icon">👥</span> Users & Accounts
+    </a>
+    <a href="{{ url_for('admin.transactions') }}" class="{% if request.endpoint == 'admin.transactions' %}active{% endif %}">
+      <span class="nav-icon">📋</span> Transactions
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="logout-link">
+      <span class="nav-icon">🚪</span> Logout
+    </a>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <div class="topbar">
+    <div class="topbar-title">{% block page_title %}Admin{% endblock %}</div>
+    <span class="topbar-badge badge-admin">Admin</span>
+  </div>
+  <div class="page-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
