@@ -1,0 +1,57 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Transactions{% endblock %}
+{% block page_title %}Transaction Monitoring{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">All Transactions</div>
+    <div class="search-bar">
+      <form method="GET" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" name="search" class="form-control" placeholder="Search account / reference..."
+               value="{{ search }}" style="width:220px; padding:7px 12px;">
+        <a href="{{ url_for('admin.transactions') }}" class="filter-btn {% if not tx_type %}active{% endif %}">All</a>
+        <a href="{{ url_for('admin.transactions', type='deposit') }}" class="filter-btn {% if tx_type == 'deposit' %}active{% endif %}">Deposits</a>
+        <a href="{{ url_for('admin.transactions', type='withdrawal') }}" class="filter-btn {% if tx_type == 'withdrawal' %}active{% endif %}">Withdrawals</a>
+        <a href="{{ url_for('admin.transactions', type='transfer') }}" class="filter-btn {% if tx_type == 'transfer' %}active{% endif %}">Transfers</a>
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      </form>
+    </div>
+  </div>
+  <div class="table-wrap">
+    {% if transactions %}
+    <table class="smarttable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date &amp; Time</th>
+          <th>Type</th>
+          <th>Sender</th>
+          <th>Receiver</th>
+          <th>Amount</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+        <tr>
+          <td class="text-muted text-sm">{{ tx.id }}</td>
+          <td class="text-muted text-sm">{{ tx.timestamp.strftime('%b %d, %Y  %H:%M') }}</td>
+          <td><span class="tx-type {{ tx.transaction_type }}">{{ tx.transaction_type }}</span></td>
+          <td class="font-mono text-sm">{{ tx.sender_account or '—' }}</td>
+          <td class="font-mono text-sm">{{ tx.receiver_account or '—' }}</td>
+          <td class="font-mono" style="font-weight:600;">৳{{ "%.2f"|format(tx.amount) }}</td>
+          <td class="text-muted text-sm">{{ tx.reference or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>No transactions found{% if search %} for "{{ search }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
