@@ -1,0 +1,114 @@
+{% extends 'customer/layout.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+  <!-- Balance Card -->
+  <div class="balance-card mb-6">
+    <div class="balance-label">Total Balance</div>
+    <div class="balance-amount">
+      <span class="balance-currency">৳</span>{{ "%.2f"|format(account.balance) }}
+    </div>
+    <div class="balance-acc">Account: {{ account.account_number }}</div>
+    <div>
+      {% if account.status == 'active' %}
+        <span class="balance-status">✓ Active Account</span>
+      {% else %}
+        <span class="balance-status" style="background:rgba(239,68,68,0.3)">🔒 Frozen</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-3 mb-8">
+    <div class="stat-card">
+      <div class="stat-icon green">💰</div>
+      <div>
+        <div class="stat-label">Total Deposits</div>
+        <div class="stat-value">৳{{ "%.2f"|format(deposits) }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">💸</div>
+      <div>
+        <div class="stat-label">Total Withdrawals</div>
+        <div class="stat-value">৳{{ "%.2f"|format(withdrawals) }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">🔄</div>
+      <div>
+        <div class="stat-label">Total Transfers</div>
+        <div class="stat-value">৳{{ "%.2f"|format(transfers) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Quick Actions</div>
+      </div>
+      <div class="card-body">
+        <div class="quick-actions">
+          <a href="{{ url_for('banking.deposit') }}" class="action-btn deposit">
+            <div class="action-icon">⬆️</div>
+            Deposit
+          </a>
+          <a href="{{ url_for('banking.withdraw') }}" class="action-btn withdraw">
+            <div class="action-icon">⬇️</div>
+            Withdraw
+          </a>
+          <a href="{{ url_for('banking.transfer') }}" class="action-btn transfer">
+            <div class="action-icon">↔️</div>
+            Transfer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Recent Activity</div>
+        <a href="{{ url_for('banking.transactions') }}" class="btn btn-outline btn-sm">View All</a>
+      </div>
+      <div class="table-wrap">
+        {% if recent %}
+        <table class="smarttable">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tx in recent %}
+            <tr>
+              <td><span class="tx-type {{ tx.transaction_type }}">{{ tx.transaction_type }}</span></td>
+              <td>
+                {% if tx.transaction_type == 'deposit' or (tx.transaction_type == 'transfer' and tx.receiver_account == account.account_number) %}
+                  <span class="tx-amount in">+৳{{ "%.2f"|format(tx.amount) }}</span>
+                {% else %}
+                  <span class="tx-amount out">-৳{{ "%.2f"|format(tx.amount) }}</span>
+                {% endif %}
+              </td>
+              <td class="text-muted text-sm">{{ tx.timestamp.strftime('%b %d, %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>No transactions yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

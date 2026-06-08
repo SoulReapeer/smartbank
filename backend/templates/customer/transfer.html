@@ -1,0 +1,46 @@
+{% extends 'customer/layout.html' %}
+{% block title %}Transfer{% endblock %}
+{% block page_title %}Transfer Money{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px; margin: 0 auto;">
+  <div class="card mb-6">
+    <div class="card-body" style="text-align:center; padding: 24px;">
+      <div class="stat-label mb-4">Available Balance</div>
+      <div style="font-size: 36px; font-weight: 800; color: var(--primary); letter-spacing: -1px;">
+        ৳{{ "%.2f"|format(account.balance) }}
+      </div>
+      <div class="text-muted text-sm mt-4 font-mono">{{ account.account_number }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">↔️ Transfer Funds</div></div>
+    <div class="card-body">
+      {% if account.status == 'frozen' %}
+        <div class="alert alert-danger">🔒 Your account is frozen. Contact support to unfreeze.</div>
+      {% else %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Receiver Account Number</label>
+          <input type="text" name="receiver_account" class="form-control font-mono"
+                 placeholder="e.g. ACC20261234" required>
+          <div class="form-hint">Enter the full account number of the recipient.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (BDT ৳)</label>
+          <input type="number" name="amount" class="form-control" placeholder="0.00"
+                 min="1" step="0.01" required>
+          <div id="amount-preview" class="form-hint" style="font-size:14px;font-weight:600;color:var(--primary);display:none;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reference <span class="text-muted">(optional)</span></label>
+          <input type="text" name="reference" class="form-control" placeholder="e.g. Rent payment, Gift...">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Send Money</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

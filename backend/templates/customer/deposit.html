@@ -1,0 +1,37 @@
+{% extends 'customer/layout.html' %}
+{% block title %}Deposit{% endblock %}
+{% block page_title %}Deposit Money{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 0 auto;">
+  <div class="card mb-6">
+    <div class="card-body" style="text-align:center; padding: 24px;">
+      <div class="stat-label mb-4">Current Balance</div>
+      <div style="font-size: 36px; font-weight: 800; color: var(--primary); letter-spacing: -1px;">
+        ৳{{ "%.2f"|format(account.balance) }}
+      </div>
+      <div class="text-muted text-sm mt-4 font-mono">{{ account.account_number }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">⬆️ Make a Deposit</div></div>
+    <div class="card-body">
+      {% if account.status == 'frozen' %}
+        <div class="alert alert-danger">🔒 Your account is frozen. Contact support to unfreeze.</div>
+      {% else %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Amount (BDT ৳)</label>
+          <input type="number" name="amount" class="form-control" placeholder="0.00"
+                 min="1" step="0.01" required autofocus>
+          <div id="amount-preview" class="form-hint" style="font-size:14px;font-weight:600;color:var(--success);display:none;"></div>
+          <div class="form-hint">Minimum deposit: ৳1.00</div>
+        </div>
+        <button type="submit" class="btn btn-success btn-block btn-lg">Deposit Now</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'customer/layout.html' %}
+{% block title %}Transactions{% endblock %}
+{% block page_title %}Transaction History{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">All Transactions</div>
+    <div class="search-bar">
+      <form method="GET" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" name="search" class="form-control" placeholder="Search reference..."
+               value="{{ search }}" style="width:200px; padding:7px 12px;">
+        <a href="{{ url_for('banking.transactions') }}" class="filter-btn {% if not tx_type %}active{% endif %}">All</a>
+        <a href="{{ url_for('banking.transactions', type='deposit') }}" class="filter-btn {% if tx_type == 'deposit' %}active{% endif %}">Deposits</a>
+        <a href="{{ url_for('banking.transactions', type='withdrawal') }}" class="filter-btn {% if tx_type == 'withdrawal' %}active{% endif %}">Withdrawals</a>
+        <a href="{{ url_for('banking.transactions', type='transfer') }}" class="filter-btn {% if tx_type == 'transfer' %}active{% endif %}">Transfers</a>
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      </form>
+    </div>
+  </div>
+  <div class="table-wrap">
+    {% if transactions %}
+    <table class="smarttable">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Reference</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+        <tr>
+          <td class="text-muted text-sm">{{ tx.timestamp.strftime('%b %d, %Y  %H:%M') }}</td>
+          <td><span class="tx-type {{ tx.transaction_type }}">{{ tx.transaction_type }}</span></td>
+          <td>
+            {% if tx.transaction_type == 'deposit' or (tx.transaction_type == 'transfer' and tx.receiver_account == account.account_number) %}
+              <span class="tx-amount in font-mono">+৳{{ "%.2f"|format(tx.amount) }}</span>
+            {% else %}
+              <span class="tx-amount out font-mono">-৳{{ "%.2f"|format(tx.amount) }}</span>
+            {% endif %}
+          </td>
+          <td class="text-muted">{{ tx.reference or '—' }}</td>
+          <td class="text-sm text-muted font-mono">
+            {% if tx.transaction_type == 'transfer' %}
+              {% if tx.sender_account == account.account_number %}
+                To: {{ tx.receiver_account }}
+              {% else %}
+                From: {{ tx.sender_account }}
+              {% endif %}
+            {% elif tx.transaction_type == 'deposit' %}
+              To: {{ tx.receiver_account }}
+            {% else %}
+              From: {{ tx.sender_account }}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>No transactions found{% if search %} for "{{ search }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
