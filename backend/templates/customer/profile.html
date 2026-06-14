@@ -63,6 +63,30 @@
   </div>
 </div>
 
+<!-- My QR Code Section -->
+<div class="card mt-6">
+  <div class="card-header">
+    <div class="card-title">📱 My QR Code</div>
+  </div>
+  <div class="card-body" style="display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="{{ url_for('banking.my_qr_code') }}" alt="Account QR Code"
+           style="width:180px;height:180px;border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;">
+    </div>
+    <div style="flex:1;min-width:220px;">
+      <div class="profile-field" style="padding-top:0;">
+        <div class="profile-field-label">Account Number</div>
+        <div class="profile-field-value mono" style="font-size:18px;">{{ account.account_number }}</div>
+      </div>
+      <p class="text-muted text-sm" style="margin:12px 0 20px;line-height:1.6;">
+        Share this QR code with others so they can quickly transfer money to your account.
+        They can scan or upload it on the <strong>Transfer</strong> page to auto-fill your account number.
+      </p>
+      <a href="{{ url_for('banking.download_qr_code') }}" class="btn btn-primary">⬇️ Download QR Code</a>
+    </div>
+  </div>
+</div>
+
 <!-- Edit Form (hidden by default) -->
 <div id="edit-form" class="hidden mt-6">
   <div class="card">
