@@ -6,29 +6,27 @@
 <div class="card">
   <div class="card-header">
     <div class="card-title">All Transactions</div>
-    <div class="search-bar">
-      <form method="GET" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <input type="text" name="search" class="form-control" placeholder="Search reference..."
-               value="{{ search }}" style="width:200px; padding:7px 12px;">
-        <a href="{{ url_for('banking.transactions') }}" class="filter-btn {% if not tx_type %}active{% endif %}">All</a>
-        <a href="{{ url_for('banking.transactions', type='deposit') }}" class="filter-btn {% if tx_type == 'deposit' %}active{% endif %}">Deposits</a>
-        <a href="{{ url_for('banking.transactions', type='withdrawal') }}" class="filter-btn {% if tx_type == 'withdrawal' %}active{% endif %}">Withdrawals</a>
-        <a href="{{ url_for('banking.transactions', type='transfer') }}" class="filter-btn {% if tx_type == 'transfer' %}active{% endif %}">Transfers</a>
-        <button type="submit" class="btn btn-primary btn-sm">Search</button>
-      </form>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <a href="{{ url_for('banking.download_pdf') }}" class="btn btn-outline btn-sm">📄 PDF</a>
+      <a href="{{ url_for('banking.download_excel') }}" class="btn btn-outline btn-sm">📊 Excel</a>
     </div>
+  </div>
+  <div class="card-header" style="background:var(--bg);border-top:none;">
+    <form method="GET" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;">
+      <input type="text" name="search" class="form-control" placeholder="Search reference..."
+             value="{{ search }}" style="width:200px;padding:7px 12px;">
+      <a href="{{ url_for('banking.transactions') }}" class="filter-btn {% if not tx_type %}active{% endif %}">All</a>
+      <a href="{{ url_for('banking.transactions', type='deposit') }}" class="filter-btn {% if tx_type=='deposit' %}active{% endif %}">Deposits</a>
+      <a href="{{ url_for('banking.transactions', type='withdrawal') }}" class="filter-btn {% if tx_type=='withdrawal' %}active{% endif %}">Withdrawals</a>
+      <a href="{{ url_for('banking.transactions', type='transfer') }}" class="filter-btn {% if tx_type=='transfer' %}active{% endif %}">Transfers</a>
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
   </div>
   <div class="table-wrap">
     {% if transactions %}
     <table class="smarttable">
       <thead>
-        <tr>
-          <th>Date & Time</th>
-          <th>Type</th>
-          <th>Amount</th>
-          <th>Reference</th>
-          <th>Details</th>
-        </tr>
+        <tr><th>Date &amp; Time</th><th>Type</th><th>Amount</th><th>Reference</th><th>Details</th></tr>
       </thead>
       <tbody>
         {% for tx in transactions %}
@@ -45,16 +43,10 @@
           <td class="text-muted">{{ tx.reference or '—' }}</td>
           <td class="text-sm text-muted font-mono">
             {% if tx.transaction_type == 'transfer' %}
-              {% if tx.sender_account == account.account_number %}
-                To: {{ tx.receiver_account }}
-              {% else %}
-                From: {{ tx.sender_account }}
-              {% endif %}
-            {% elif tx.transaction_type == 'deposit' %}
-              To: {{ tx.receiver_account }}
-            {% else %}
-              From: {{ tx.sender_account }}
-            {% endif %}
+              {% if tx.sender_account == account.account_number %}To: {{ tx.receiver_account }}
+              {% else %}From: {{ tx.sender_account }}{% endif %}
+            {% elif tx.transaction_type == 'deposit' %}To: {{ tx.receiver_account }}
+            {% else %}From: {{ tx.sender_account }}{% endif %}
           </td>
         </tr>
         {% endfor %}
