@@ -16,7 +16,14 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(10), nullable=False, default='customer')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Phase 2: Email verification
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    verification_token = db.Column(db.String(128), nullable=True)
+
     account = db.relationship('Account', backref='user', uselist=False)
+    audit_logs = db.relationship('AuditLog', backref='user', lazy='dynamic')
+    reset_tokens = db.relationship('PasswordResetToken', backref='user', lazy='dynamic')
+    notifications = db.relationship('Notification', backref='user', lazy='dynamic')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -52,3 +59,40 @@ class Transaction(db.Model):
     amount = db.Column(db.Float, nullable=False)
     reference = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(128), unique=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self):
+        return not self.used and datetime.utcnow() < self.expires_at
+
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    action = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.String(500), nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    type = db.Column(db.String(30), nullable=False, default='info')
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
