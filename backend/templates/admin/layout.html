@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% block body %}
-<!-- Admin Sidebar -->
 <aside class="sidebar">
   <div class="sidebar-brand">
     <div class="brand-name">💳 SmartBank</div>
@@ -13,22 +12,29 @@
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Overview</div>
-    <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
+    <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint=='admin.index' %}active{% endif %}">
       <span class="nav-icon">📊</span> Dashboard
     </a>
     <div class="nav-section-label">Management</div>
-    <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint == 'admin.users' %}active{% endif %}">
-      <span class="nav-icon">👥</span> Users & Accounts
+    <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint=='admin.users' %}active{% endif %}">
+      <span class="nav-icon">👥</span> Users &amp; Accounts
     </a>
-    <a href="{{ url_for('admin.transactions') }}" class="{% if request.endpoint == 'admin.transactions' %}active{% endif %}">
+    <a href="{{ url_for('admin.transactions') }}" class="{% if request.endpoint=='admin.transactions' %}active{% endif %}">
       <span class="nav-icon">📋</span> Transactions
+    </a>
+    <div class="nav-section-label">Security</div>
+    <a href="{{ url_for('admin.audit_logs') }}" class="{% if request.endpoint=='admin.audit_logs' %}active{% endif %}">
+      <span class="nav-icon">🔍</span> Audit Logs
+    </a>
+    <div class="nav-section-label">Exports</div>
+    <a href="{{ url_for('admin.export_excel') }}">
+      <span class="nav-icon">📊</span> Export Excel
     </a>
     <a href="{{ url_for('auth.logout') }}" class="logout-link">
       <span class="nav-icon">🚪</span> Logout
     </a>
   </nav>
 </aside>
-
 <div class="main-wrap">
   <div class="topbar">
     <div class="topbar-title">{% block page_title %}Admin{% endblock %}</div>
