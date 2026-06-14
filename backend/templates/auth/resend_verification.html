@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Resend Verification{% endblock %}
+{% block body %}
+<div class="auth-page">
+  <div class="auth-left">
+    <div style="font-size:32px;font-weight:800;color:#fff;margin-bottom:40px;letter-spacing:-1px;">💳 SmartBank</div>
+    <h1>Verify your email</h1>
+    <p>Enter your email to receive a new verification link.</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-box">
+      <h2>Resend Verification</h2>
+      <p class="auth-sub">We'll resend the verification link to your email.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Resend Link</button>
+      </form>
+      <p class="text-muted text-sm" style="text-align:center;margin-top:20px;">
+        <a href="{{ url_for('auth.login') }}" style="color:var(--secondary);">← Back to Login</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
