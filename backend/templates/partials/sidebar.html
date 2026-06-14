@@ -29,6 +29,11 @@
     <a href="{{ url_for('banking.transactions') }}" class="{% if request.endpoint == 'banking.transactions' %}active{% endif %}">
       <span class="nav-icon">📋</span> Transactions
     </a>
+    <a href="{{ url_for('notifications.index') }}" class="{% if request.endpoint == 'notifications.index' %}active{% endif %}">
+      <span class="nav-icon">🔔</span> Notifications
+      <span id="sidebar-unread-badge" style="display:none;margin-left:auto;background:#EF4444;color:#fff;
+            font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
+    </a>
     <div class="nav-section-label">Account</div>
     <a href="{{ url_for('dashboard.profile') }}" class="{% if request.endpoint == 'dashboard.profile' %}active{% endif %}">
       <span class="nav-icon">👤</span> Profile
