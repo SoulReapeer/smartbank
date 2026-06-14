@@ -1,0 +1,84 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">System Audit Trail</div>
+    <div class="text-muted text-sm">{{ pagination.total }} total entries</div>
+  </div>
+  <div class="card-header" style="background:var(--bg);border-top:none;">
+    <form method="GET" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;">
+      <input type="text" name="search" class="form-control" placeholder="Search details / IP..."
+             value="{{ search }}" style="width:200px;padding:7px 12px;">
+      <select name="action" class="form-control" style="width:180px;padding:7px 12px;">
+        <option value="">All Actions</option>
+        {% for at in action_types %}
+          <option value="{{ at }}" {% if action == at %}selected{% endif %}>{{ at }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline btn-sm">Reset</a>
+    </form>
+  </div>
+  <div class="table-wrap">
+    {% if logs %}
+    <table class="smarttable">
+      <thead>
+        <tr><th>#</th><th>Time</th><th>User</th><th>Action</th><th>Details</th><th>IP Address</th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted text-sm">{{ log.id }}</td>
+          <td class="text-muted text-sm" style="white-space:nowrap;">{{ log.timestamp.strftime('%b %d, %Y %H:%M') }}</td>
+          <td>
+            {% if log.user %}
+              <span style="font-weight:600;">{{ log.user.full_name }}</span><br>
+              <span class="text-muted text-sm">{{ log.user.email }}</span>
+            {% else %}
+              <span class="text-muted">System</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set action_colors = {
+              'login':'#D1FAE5:#065F46', 'logout':'#F1F5F9:#475569',
+              'register':'#DBEAFE:#1D4ED8', 'deposit':'#D1FAE5:#065F46',
+              'withdrawal':'#FEE2E2:#991B1B', 'transfer':'#DBEAFE:#1D4ED8',
+              'account_freeze':'#FEF3C7:#92400E', 'account_unfreeze':'#D1FAE5:#065F46',
+              'password_change':'#EDE9FE:#5B21B6', 'password_reset':'#EDE9FE:#5B21B6',
+              'profile_update':'#CFFAFE:#155E75', 'email_verified':'#D1FAE5:#065F46',
+              'statement_download':'#F5F3FF:#4C1D95', 'excel_export':'#F5F3FF:#4C1D95'
+            } %}
+            {% set colors = action_colors.get(log.action, '#F1F5F9:#475569').split(':') %}
+            <span style="background:{{ colors[0] }};color:{{ colors[1] }};padding:3px 10px;
+                         border-radius:6px;font-size:12px;font-weight:600;">{{ log.action }}</span>
+          </td>
+          <td class="text-muted text-sm">{{ log.details or '—' }}</td>
+          <td class="font-mono text-sm text-muted">{{ log.ip_address or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">🔍</div><p>No audit logs found.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <div style="padding:16px 24px;display:flex;gap:8px;align-items:center;justify-content:center;border-top:1px solid var(--border);">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('admin.audit_logs', page=pagination.prev_num, search=search, action=action) }}"
+         class="btn btn-outline btn-sm">← Prev</a>
+    {% endif %}
+    <span class="text-muted text-sm">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+      <a href="{{ url_for('admin.audit_logs', page=pagination.next_num, search=search, action=action) }}"
+         class="btn btn-outline btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
