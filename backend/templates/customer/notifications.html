@@ -1,0 +1,88 @@
+{% extends 'customer/layout.html' %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      All Notifications
+      {% if unread_count > 0 %}
+        <span style="background:#EF4444;color:#fff;font-size:11px;font-weight:700;
+                      padding:2px 8px;border-radius:10px;margin-left:8px;">{{ unread_count }} unread</span>
+      {% endif %}
+    </div>
+    <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+      <button type="submit" class="btn btn-outline btn-sm">Mark All Read</button>
+    </form>
+  </div>
+  <div class="card-header" style="background:var(--bg);border-top:none;">
+    <form method="GET" style="display:flex;gap:8px;align-items:center;width:100%;">
+      <input type="text" name="search" class="form-control" placeholder="Search notifications..."
+             value="{{ search }}" style="max-width:280px;padding:7px 12px;">
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      {% if search %}
+        <a href="{{ url_for('notifications.index') }}" class="btn btn-outline btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% set notif_icons = {
+    'deposit':'💰','withdrawal':'💸','transfer_sent':'↗️','transfer_received':'↘️',
+    'password_changed':'🔒','account_frozen':'🚫','account_unfrozen':'✅'
+  } %}
+  {% set notif_colors = {
+    'deposit':'#D1FAE5:#065F46','withdrawal':'#FEE2E2:#991B1B',
+    'transfer_sent':'#DBEAFE:#1D4ED8','transfer_received':'#D1FAE5:#065F46',
+    'password_changed':'#FEF3C7:#92400E','account_frozen':'#FEE2E2:#991B1B',
+    'account_unfrozen':'#D1FAE5:#065F46'
+  } %}
+
+  {% if notifications %}
+    <div>
+      {% for n in notifications %}
+      {% set colors = notif_colors.get(n.type, '#F1F5F9:#475569').split(':') %}
+      <div style="display:flex;gap:14px;padding:18px 24px;border-bottom:1px solid var(--border);
+                   {% if not n.is_read %}background:#F8FAFF;{% endif %}">
+        <div style="width:44px;height:44px;border-radius:12px;background:{{ colors[0] }};
+                     display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+          {{ notif_icons.get(n.type, '🔔') }}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">{{ n.title }}</div>
+            <div style="font-size:11.5px;color:var(--text-light);white-space:nowrap;">{{ n.created_at.strftime('%b %d, %Y · %H:%M') }}</div>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.6;">{{ n.message }}</div>
+          {% if not n.is_read %}
+          <form method="POST" action="{{ url_for('notifications.mark_read', notif_id=n.id) }}" style="margin-top:8px;">
+            <button type="submit" class="btn btn-outline btn-sm">Mark as Read</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if not n.is_read %}
+          <span style="width:9px;height:9px;background:#2563EB;border-radius:50%;flex-shrink:0;margin-top:6px;"></span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔔</div>
+      <p>No notifications found{% if search %} for "{{ search }}"{% endif %}.</p>
+    </div>
+  {% endif %}
+
+  {% if pagination.pages > 1 %}
+  <div style="padding:16px 24px;display:flex;gap:8px;align-items:center;justify-content:center;border-top:1px solid var(--border);">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('notifications.index', page=pagination.prev_num, search=search) }}" class="btn btn-outline btn-sm">← Prev</a>
+    {% endif %}
+    <span class="text-muted text-sm">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+      <a href="{{ url_for('notifications.index', page=pagination.next_num, search=search) }}" class="btn btn-outline btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
