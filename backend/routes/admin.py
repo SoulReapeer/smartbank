@@ -6,6 +6,7 @@ import io
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -15,13 +16,14 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ── Dashboard ─────────────────────────────────────────────────────
+
 @admin_bp.route('/')
 @login_required
 @admin_required
 def index():
     from datetime import datetime, timedelta
     from sqlalchemy import func
+    from dateutil.relativedelta import relativedelta
 
     total_users        = User.query.filter_by(role='customer').count()
     verified_users     = User.query.filter_by(role='customer', is_verified=True).count()
@@ -29,10 +31,9 @@ def index():
     active_accounts    = Account.query.filter_by(status='active').count()
     total_transactions = Transaction.query.count()
     total_funds        = db.session.query(func.sum(Account.balance)).scalar() or 0
-
-    total_deposits    = db.session.query(func.sum(Transaction.amount)).filter(
+    total_deposits     = db.session.query(func.sum(Transaction.amount)).filter(
         Transaction.transaction_type == 'deposit').scalar() or 0
-    total_withdrawals = db.session.query(func.sum(Transaction.amount)).filter(
+    total_withdrawals  = db.session.query(func.sum(Transaction.amount)).filter(
         Transaction.transaction_type == 'withdrawal').scalar() or 0
 
     today = datetime.utcnow().date()
@@ -40,86 +41,58 @@ def index():
         func.date(Transaction.timestamp) == today
     ).count()
 
-    # Daily transactions last 14 days
     daily_labels, daily_counts = [], []
     for i in range(13, -1, -1):
         day   = datetime.utcnow().date() - timedelta(days=i)
-        count = Transaction.query.filter(
-            func.date(Transaction.timestamp) == day
-        ).count()
+        count = Transaction.query.filter(func.date(Transaction.timestamp) == day).count()
         daily_labels.append(day.strftime('%b %d'))
         daily_counts.append(count)
 
-    # Monthly deposits & withdrawals last 6 months
     monthly_labels, monthly_deposits, monthly_withdrawals = [], [], []
-    for i in range(5, -1, -1):
-        from dateutil.relativedelta import relativedelta
-        month_start = (datetime.utcnow().replace(day=1) - relativedelta(months=i))
-        month_end   = month_start + relativedelta(months=1)
-        label       = month_start.strftime('%b %Y')
-        dep  = db.session.query(func.sum(Transaction.amount)).filter(
-            Transaction.transaction_type == 'deposit',
-            Transaction.timestamp >= month_start,
-            Transaction.timestamp < month_end
-        ).scalar() or 0
-        wdraw = db.session.query(func.sum(Transaction.amount)).filter(
-            Transaction.transaction_type == 'withdrawal',
-            Transaction.timestamp >= month_start,
-            Transaction.timestamp < month_end
-        ).scalar() or 0
-        monthly_labels.append(label)
-        monthly_deposits.append(round(dep, 2))
-        monthly_withdrawals.append(round(wdraw, 2))
-
-    # User registrations per month (last 6)
     reg_counts = []
     for i in range(5, -1, -1):
-        from dateutil.relativedelta import relativedelta
-        month_start = (datetime.utcnow().replace(day=1) - relativedelta(months=i))
-        month_end   = month_start + relativedelta(months=1)
-        count = User.query.filter(
-            User.role == 'customer',
-            User.created_at >= month_start,
-            User.created_at < month_end
-        ).count()
-        reg_counts.append(count)
+        ms = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0) \
+             - relativedelta(months=i)
+        me = ms + relativedelta(months=1)
+        dep  = db.session.query(func.sum(Transaction.amount)).filter(
+            Transaction.transaction_type == 'deposit',
+            Transaction.timestamp >= ms, Transaction.timestamp < me).scalar() or 0
+        wdraw = db.session.query(func.sum(Transaction.amount)).filter(
+            Transaction.transaction_type == 'withdrawal',
+            Transaction.timestamp >= ms, Transaction.timestamp < me).scalar() or 0
+        reg = User.query.filter(User.role == 'customer',
+                                User.created_at >= ms, User.created_at < me).count()
+        monthly_labels.append(ms.strftime('%b %Y'))
+        monthly_deposits.append(round(dep, 2))
+        monthly_withdrawals.append(round(wdraw, 2))
+        reg_counts.append(reg)
 
-    # ── Most Active Customers (top 10 by transaction count) ─────────
     most_active = []
-    accounts_with_users = Account.query.join(User).filter(User.role == 'customer').all()
-    for acc in accounts_with_users:
-        tx_count = Transaction.query.filter(
+    for acc in Account.query.join(User).filter(User.role == 'customer').all():
+        cnt = Transaction.query.filter(
             (Transaction.sender_account == acc.account_number) |
             (Transaction.receiver_account == acc.account_number)
         ).count()
-        if tx_count > 0:
-            most_active.append({
-                'name': acc.user.full_name,
-                'account_number': acc.account_number,
-                'tx_count': tx_count
-            })
+        if cnt > 0:
+            most_active.append({'name': acc.user.full_name,
+                                'account_number': acc.account_number, 'tx_count': cnt})
     most_active.sort(key=lambda x: x['tx_count'], reverse=True)
     most_active = most_active[:10]
 
-    # ── Largest Transfers (top 10) ───────────────────────────────────
-    largest_transfers = Transaction.query.filter_by(transaction_type='transfer') \
-        .order_by(Transaction.amount.desc()).limit(10).all()
-
-    # Resolve sender/receiver names for largest transfers
-    largest_transfers_data = []
-    for tx in largest_transfers:
-        sender_acc   = Account.query.filter_by(account_number=tx.sender_account).first()
-        receiver_acc = Account.query.filter_by(account_number=tx.receiver_account).first()
-        largest_transfers_data.append({
-            'sender_account': tx.sender_account,
-            'sender_name': sender_acc.user.full_name if sender_acc and sender_acc.user else 'Unknown',
+    largest_transfers = []
+    for tx in Transaction.query.filter_by(transaction_type='transfer') \
+            .order_by(Transaction.amount.desc()).limit(10).all():
+        sa = Account.query.filter_by(account_number=tx.sender_account).first()
+        ra = Account.query.filter_by(account_number=tx.receiver_account).first()
+        largest_transfers.append({
+            'sender_account':   tx.sender_account,
+            'sender_name':      sa.user.full_name if sa and sa.user else 'Unknown',
             'receiver_account': tx.receiver_account,
-            'receiver_name': receiver_acc.user.full_name if receiver_acc and receiver_acc.user else 'Unknown',
-            'amount': tx.amount,
-            'timestamp': tx.timestamp
+            'receiver_name':    ra.user.full_name if ra and ra.user else 'Unknown',
+            'amount':           tx.amount,
+            'timestamp':        tx.timestamp,
         })
 
-    # ── Top Customer Activity Chart (top 5 names + counts) ───────────
     top_customer_labels = [c['name'].split()[0] for c in most_active[:5]]
     top_customer_counts = [c['tx_count'] for c in most_active[:5]]
 
@@ -132,19 +105,38 @@ def index():
         daily_labels=daily_labels, daily_counts=daily_counts,
         monthly_labels=monthly_labels,
         monthly_deposits=monthly_deposits, monthly_withdrawals=monthly_withdrawals,
-        reg_counts=reg_counts,
-        most_active=most_active,
-        largest_transfers=largest_transfers_data,
+        reg_counts=reg_counts, most_active=most_active,
+        largest_transfers=largest_transfers,
         top_customer_labels=top_customer_labels,
         top_customer_counts=top_customer_counts)
 
-# ── Users ─────────────────────────────────────────────────────────
+
 @admin_bp.route('/users')
 @login_required
 @admin_required
 def users():
     all_users = User.query.filter_by(role='customer').all()
     return render_template('admin/users.html', users=all_users)
+
+
+@admin_bp.route('/verify-user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def manual_verify(user_id):
+    """Admin can manually mark a user as verified."""
+    user = User.query.get_or_404(user_id)
+    if not user.is_verified:
+        user.is_verified = True
+        user.verification_token = None
+        db.session.commit()
+        from services.audit_service import log_action
+        log_action(current_user.id, 'admin_manual_verify',
+                   f'Manually verified user {user.email}')
+        flash(f'{user.email} has been manually verified.', 'success')
+    else:
+        flash(f'{user.email} is already verified.', 'info')
+    return redirect(url_for('admin.users'))
+
 
 @admin_bp.route('/freeze/<int:user_id>')
 @login_required
@@ -158,10 +150,11 @@ def freeze(user_id):
         user.account.status = 'frozen'
         db.session.commit()
         log_action(current_user.id, A.ACCOUNT_FREEZE,
-                   f'Froze account {user.account.account_number} (user {user.email})')
+                   f'Froze account {user.account.account_number}')
         N.notify_account_frozen(user, user.account)
-        flash(f'Account {user.account.account_number} has been frozen.', 'warning')
+        flash(f'Account {user.account.account_number} frozen.', 'warning')
     return redirect(url_for('admin.users'))
+
 
 @admin_bp.route('/unfreeze/<int:user_id>')
 @login_required
@@ -175,12 +168,12 @@ def unfreeze(user_id):
         user.account.status = 'active'
         db.session.commit()
         log_action(current_user.id, A.ACCOUNT_UNFREEZE,
-                   f'Unfroze account {user.account.account_number} (user {user.email})')
+                   f'Unfroze account {user.account.account_number}')
         N.notify_account_unfrozen(user, user.account)
-        flash(f'Account {user.account.account_number} has been unfrozen.', 'success')
+        flash(f'Account {user.account.account_number} unfrozen.', 'success')
     return redirect(url_for('admin.users'))
 
-# ── Transactions ──────────────────────────────────────────────────
+
 @admin_bp.route('/transactions')
 @login_required
 @admin_required
@@ -200,16 +193,15 @@ def transactions():
     return render_template('admin/transactions.html', transactions=txs,
                            tx_type=tx_type, search=search)
 
-# ── Audit Logs ────────────────────────────────────────────────────
+
 @admin_bp.route('/audit-logs')
 @login_required
 @admin_required
 def audit_logs():
-    search  = request.args.get('search', '').strip()
-    action  = request.args.get('action', '')
-    page    = request.args.get('page', 1, type=int)
+    search   = request.args.get('search', '').strip()
+    action   = request.args.get('action', '')
+    page     = request.args.get('page', 1, type=int)
     per_page = 25
-
     query = AuditLog.query
     if action:
         query = query.filter_by(action=action)
@@ -219,16 +211,13 @@ def audit_logs():
             (AuditLog.ip_address.ilike(f'%{search}%'))
         )
     pagination = query.order_by(AuditLog.timestamp.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    # Distinct action types for filter dropdown
+        page=page, per_page=per_page, error_out=False)
     action_types = [r[0] for r in db.session.query(AuditLog.action).distinct().all()]
     return render_template('admin/audit_logs.html',
                            logs=pagination.items, pagination=pagination,
-                           action_types=action_types,
-                           search=search, action=action)
+                           action_types=action_types, search=search, action=action)
 
-# ── Admin Excel Export ────────────────────────────────────────────
+
 @admin_bp.route('/export/excel')
 @login_required
 @admin_required
@@ -236,9 +225,6 @@ def export_excel():
     from services.excel_service import generate_excel
     txs = Transaction.query.order_by(Transaction.timestamp.desc()).all()
     xlsx_bytes, fname = generate_excel(txs, filename_prefix='SmartBank_AllTransactions')
-    return send_file(
-        io.BytesIO(xlsx_bytes),
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=fname
-    )
+    return send_file(io.BytesIO(xlsx_bytes),
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name=fname)
