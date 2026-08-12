@@ -11,3 +11,4 @@ qrcode>=7.4.2
 Pillow>=10.0.0
 opencv-python-headless>=4.9.0
 numpy>=1.26.0
+APScheduler>=3.10.1
