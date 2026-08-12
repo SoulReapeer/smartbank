@@ -1,11 +1,10 @@
-import secrets
+import secrets, random
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, Account, PasswordResetToken
 from services.audit_service import log_action
 import services.audit_service as A
-import random
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -39,9 +38,7 @@ def register():
             flash('Email already registered.', 'danger')
             return render_template('auth/register.html')
 
-        token = secrets.token_urlsafe(48)
-        user  = User(full_name=full_name, email=email, phone=phone,
-                     is_verified=False, verification_token=token)
+        user = User(full_name=full_name, email=email, phone=phone, is_verified=False)
         user.set_password(password)
         db.session.add(user)
         db.session.flush()
@@ -53,49 +50,82 @@ def register():
         db.session.add(account)
         db.session.commit()
 
-        # Send verification email
-        from services.email_service import send_verification_email
-        base_url = request.host_url.rstrip('/')
-        send_verification_email(user, token, base_url)
+        from services.otp_service import generate_otp_for_user
+        generate_otp_for_user(user)
         log_action(user.id, A.REGISTER, f'New registration: {email}')
 
-        flash('Account created! Check your email (or terminal in dev mode) for a verification link.', 'success')
-        return redirect(url_for('auth.login'))
+        # Store user_id in session so /verify-otp knows who to verify
+        session['otp_user_id'] = user.id
+        flash('Account created! Check your email (or terminal) for your 6-digit verification code.', 'success')
+        return redirect(url_for('auth.verify_otp'))
     return render_template('auth/register.html')
 
-# ── Verify Email ──────────────────────────────────────────────────
-@auth_bp.route('/verify-email/<token>')
-def verify_email(token):
-    user = User.query.filter_by(verification_token=token).first()
-    if not user:
-        flash('Invalid or expired verification link.', 'danger')
+# ── Verify OTP ────────────────────────────────────────────────────
+@auth_bp.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    user_id = session.get('otp_user_id')
+    if not user_id:
+        flash('Session expired. Please register or log in again.', 'warning')
         return redirect(url_for('auth.login'))
-    if user.is_verified:
-        flash('Email already verified. Please log in.', 'info')
-        return redirect(url_for('auth.login'))
-    user.is_verified = True
-    user.verification_token = None
-    db.session.commit()
-    log_action(user.id, A.EMAIL_VERIFIED, f'Email verified: {user.email}')
-    flash('Email verified! You can now log in.', 'success')
-    return redirect(url_for('auth.login'))
 
-# ── Resend Verification ───────────────────────────────────────────
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('auth.register'))
+
+    if user.is_verified:
+        session.pop('otp_user_id', None)
+        flash('Your email is already verified. Please log in.', 'info')
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        submitted = request.form.get('otp', '').strip()
+        from services.otp_service import verify_otp as svc_verify
+        success, error = svc_verify(user, submitted)
+        if success:
+            session.pop('otp_user_id', None)
+            log_action(user.id, A.EMAIL_VERIFIED, f'Email verified via OTP: {user.email}')
+            flash('Email verified! You can now log in.', 'success')
+            return redirect(url_for('auth.login'))
+        flash(error, 'danger')
+
+    return render_template('auth/verify_otp.html', email=user.email)
+
+# ── Resend OTP ────────────────────────────────────────────────────
+@auth_bp.route('/resend-otp', methods=['POST'])
+def resend_otp():
+    user_id = session.get('otp_user_id')
+    if not user_id:
+        flash('Session expired. Please register again.', 'warning')
+        return redirect(url_for('auth.register'))
+    user = User.query.get(user_id)
+    if user and not user.is_verified:
+        from services.otp_service import generate_otp_for_user
+        generate_otp_for_user(user)
+        flash('A new verification code has been sent.', 'info')
+    return redirect(url_for('auth.verify_otp'))
+
+# ── Legacy: resend-verification (redirect to OTP flow) ────────────
 @auth_bp.route('/resend-verification', methods=['GET', 'POST'])
 def resend_verification():
+    """Kept for backward compat with Phase 2/3 links."""
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         user  = User.query.filter_by(email=email).first()
         if user and not user.is_verified:
-            token = secrets.token_urlsafe(48)
-            user.verification_token = token
-            db.session.commit()
-            from services.email_service import send_verification_email
-            base_url = request.host_url.rstrip('/')
-            send_verification_email(user, token, base_url)
-        flash('If that email is registered and unverified, a new link has been sent.', 'info')
+            from services.otp_service import generate_otp_for_user
+            generate_otp_for_user(user)
+            session['otp_user_id'] = user.id
+            return redirect(url_for('auth.verify_otp'))
+        flash('If that email is registered and unverified, a code has been sent.', 'info')
         return redirect(url_for('auth.login'))
     return render_template('auth/resend_verification.html')
+
+# ── Legacy verify-email link (graceful fallback) ──────────────────
+@auth_bp.route('/verify-email/<token>')
+def verify_email(token):
+    flash('Email verification now uses a 6-digit code. Please check your email for the code.', 'info')
+    return redirect(url_for('auth.login'))
 
 # ── Login ─────────────────────────────────────────────────────────
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -108,8 +138,11 @@ def login():
         user     = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
             if not user.is_verified and not user.is_admin():
-                flash('Please verify your email before logging in.', 'warning')
-                return render_template('auth/login.html', unverified_email=email)
+                session['otp_user_id'] = user.id
+                from services.otp_service import generate_otp_for_user
+                generate_otp_for_user(user)
+                flash('Please verify your email. A new code has been sent.', 'warning')
+                return redirect(url_for('auth.verify_otp'))
             login_user(user)
             log_action(user.id, A.LOGIN, f'Login from {request.remote_addr}')
             return redirect(url_for('admin.index') if user.is_admin() else url_for('dashboard.index'))
@@ -156,7 +189,6 @@ def forgot_password():
         email = request.form.get('email', '').strip().lower()
         user  = User.query.filter_by(email=email).first()
         if user:
-            # Invalidate old tokens
             PasswordResetToken.query.filter_by(user_id=user.id, used=False).update({'used': True})
             token   = secrets.token_urlsafe(48)
             expires = datetime.utcnow() + timedelta(hours=1)
