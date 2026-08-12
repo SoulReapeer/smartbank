@@ -9,9 +9,14 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Email — leave blank in dev; emails print to terminal instead
+    # Email
     MAIL_SERVER   = os.environ.get('MAIL_SERVER',   '')
     MAIL_PORT     = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_FROM     = os.environ.get('MAIL_FROM',     'noreply@smartbank.com')
+
+    # Profile picture uploads
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'profile_pictures')
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024   # 2 MB
+    ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png'}
