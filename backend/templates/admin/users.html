@@ -12,27 +12,35 @@
     {% if users %}
     <table class="smarttable">
       <thead>
-        <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Account Number</th>
-          <th>Balance</th>
-          <th>Status</th>
-          <th>Joined</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>#</th><th>User</th><th>Email</th><th>Account</th><th>Balance</th><th>Verified</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for user in users %}
         <tr>
           <td class="text-muted text-sm">{{ loop.index }}</td>
-          <td style="font-weight:600;">{{ user.full_name }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              {% if user.profile_image %}
+                <img src="{{ user.avatar_url() }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+              {% else %}
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;
+                            display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">
+                  {{ user.initials() }}
+                </div>
+              {% endif %}
+              <span style="font-weight:600;">{{ user.full_name }}</span>
+            </div>
+          </td>
           <td class="text-muted">{{ user.email }}</td>
-          <td class="text-muted">{{ user.phone }}</td>
           <td class="font-mono text-sm">{{ user.account.account_number if user.account else '—' }}</td>
           <td class="font-mono">৳{{ "%.2f"|format(user.account.balance) if user.account else '0.00' }}</td>
+          <td>
+            {% if user.is_verified %}
+              <span class="topbar-badge badge-active">✓ Verified</span>
+            {% else %}
+              <span class="topbar-badge badge-frozen">✗ Unverified</span>
+            {% endif %}
+          </td>
           <td>
             {% if user.account and user.account.status == 'active' %}
               <span class="topbar-badge badge-active">Active</span>
@@ -42,31 +50,32 @@
           </td>
           <td class="text-muted text-sm">{{ user.created_at.strftime('%b %d, %Y') }}</td>
           <td>
-            {% if user.account %}
-              {% if user.account.status == 'active' %}
-                <a href="{{ url_for('admin.freeze', user_id=user.id) }}"
-                   class="btn btn-warning btn-sm confirm-action"
-                   data-confirm="Freeze account {{ user.account.account_number }}?">
-                  🔒 Freeze
-                </a>
-              {% else %}
-                <a href="{{ url_for('admin.unfreeze', user_id=user.id) }}"
-                   class="btn btn-success btn-sm confirm-action"
-                   data-confirm="Unfreeze account {{ user.account.account_number }}?">
-                  ✅ Unfreeze
-                </a>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              {% if not user.is_verified %}
+              <form method="POST" action="{{ url_for('admin.manual_verify', user_id=user.id) }}"
+                    onsubmit="return confirm('Manually verify {{ user.email }}?');">
+                <button type="submit" class="btn btn-primary btn-sm">Verify</button>
+              </form>
               {% endif %}
-            {% endif %}
+              {% if user.account %}
+                {% if user.account.status == 'active' %}
+                  <a href="{{ url_for('admin.freeze', user_id=user.id) }}"
+                     class="btn btn-warning btn-sm confirm-action"
+                     data-confirm="Freeze {{ user.account.account_number }}?">🔒 Freeze</a>
+                {% else %}
+                  <a href="{{ url_for('admin.unfreeze', user_id=user.id) }}"
+                     class="btn btn-success btn-sm confirm-action"
+                     data-confirm="Unfreeze {{ user.account.account_number }}?">✅ Unfreeze</a>
+                {% endif %}
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">👥</div>
-      <p>No customers registered yet.</p>
-    </div>
+    <div class="empty-state"><div class="empty-icon">👥</div><p>No customers registered yet.</p></div>
     {% endif %}
   </div>
 </div>
