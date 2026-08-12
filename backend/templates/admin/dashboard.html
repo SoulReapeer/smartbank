@@ -1,262 +1,38 @@
-{% extends 'admin/layout.html' %}
-{% block title %}Admin Dashboard{% endblock %}
-{% block page_title %}Admin Dashboard{% endblock %}
-
+{% extends 'admin/layout.html' %}{% block title %}Admin Dashboard{% endblock %}{% block page_title %}Admin Dashboard{% endblock %}
 {% block content %}
-<!-- Stat Cards Row 1 -->
 <div class="grid grid-4 mb-6">
-  <div class="stat-card">
-    <div class="stat-icon blue">👥</div>
-    <div>
-      <div class="stat-label">Total Users</div>
-      <div class="stat-value">{{ total_users }}</div>
-      <div class="text-muted text-sm">{{ verified_users }} verified</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon green">🏦</div>
-    <div>
-      <div class="stat-label">Total Accounts</div>
-      <div class="stat-value">{{ total_accounts }}</div>
-      <div class="text-muted text-sm">{{ active_accounts }} active</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon purple">📋</div>
-    <div>
-      <div class="stat-label">Transactions</div>
-      <div class="stat-value">{{ total_transactions }}</div>
-      <div class="text-muted text-sm">{{ todays_transactions }} today</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon green">💰</div>
-    <div><div class="stat-label">Total Funds</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_funds) }}</div></div>
-  </div>
+<div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-label">Total Users</div><div class="stat-value">{{ total_users }}</div><div class="text-muted text-sm">{{ verified_users }} verified</div></div></div>
+<div class="stat-card"><div class="stat-icon green">🏦</div><div><div class="stat-label">Total Accounts</div><div class="stat-value">{{ total_accounts }}</div><div class="text-muted text-sm">{{ active_accounts }} active</div></div></div>
+<div class="stat-card"><div class="stat-icon purple">📋</div><div><div class="stat-label">Transactions</div><div class="stat-value">{{ total_transactions }}</div><div class="text-muted text-sm">{{ todays_transactions }} today</div></div></div>
+<div class="stat-card"><div class="stat-icon green">💰</div><div><div class="stat-label">Total Funds</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_funds) }}</div></div></div>
 </div>
-
-<!-- Stat Cards Row 2 -->
 <div class="grid grid-3 mb-8">
-  <div class="stat-card">
-    <div class="stat-icon green">⬆️</div>
-    <div><div class="stat-label">Total Deposits</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_deposits) }}</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon red">⬇️</div>
-    <div><div class="stat-label">Total Withdrawals</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_withdrawals) }}</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon blue">📅</div>
-    <div><div class="stat-label">Today's Transactions</div><div class="stat-value">{{ todays_transactions }}</div></div>
-  </div>
+<div class="stat-card"><div class="stat-icon green">⬆️</div><div><div class="stat-label">Total Deposits</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_deposits) }}</div></div></div>
+<div class="stat-card"><div class="stat-icon red">⬇️</div><div><div class="stat-label">Total Withdrawals</div><div class="stat-value" style="font-size:18px;">৳{{ "%.2f"|format(total_withdrawals) }}</div></div></div>
+<div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-label">Daily Transactions</div><div class="stat-value">{{ todays_transactions }}</div></div></div>
 </div>
-
-<!-- Charts Row 1 -->
 <div class="grid grid-2 mb-8">
-  <div class="card">
-    <div class="card-header"><div class="card-title">Daily Transaction Volume (Last 14 Days)</div></div>
-    <div class="card-body" style="padding:16px;">
-      <div style="position:relative;height:220px;">
-        <canvas id="dailyChart"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><div class="card-title">Monthly Deposits vs Withdrawals</div></div>
-    <div class="card-body" style="padding:16px;">
-      <div style="position:relative;height:220px;">
-        <canvas id="monthlyChart"></canvas>
-      </div>
-    </div>
-  </div>
+<div class="card"><div class="card-header"><div class="card-title">Daily Volume (14 Days)</div></div><div class="card-body" style="padding:16px;"><div style="position:relative;height:220px;"><canvas id="dailyChart"></canvas></div></div></div>
+<div class="card"><div class="card-header"><div class="card-title">Monthly Deposits vs Withdrawals</div></div><div class="card-body" style="padding:16px;"><div style="position:relative;height:220px;"><canvas id="monthlyChart"></canvas></div></div></div>
 </div>
-
-<!-- Charts Row 2 -->
 <div class="grid grid-2 mb-8">
-  <div class="card">
-    <div class="card-header"><div class="card-title">User Growth (Registrations Per Month)</div></div>
-    <div class="card-body" style="padding:16px;">
-      <div style="position:relative;height:200px;">
-        <canvas id="regChart"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><div class="card-title">Top Customer Activity</div></div>
-    <div class="card-body" style="padding:16px;">
-      <div style="position:relative;height:200px;">
-        {% if top_customer_labels %}
-        <canvas id="topCustChart"></canvas>
-        {% else %}
-        <div class="empty-state"><div class="empty-icon">📊</div><p>No transaction activity yet.</p></div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
+<div class="card"><div class="card-header"><div class="card-title">User Growth</div></div><div class="card-body" style="padding:16px;"><div style="position:relative;height:200px;"><canvas id="regChart"></canvas></div></div></div>
+<div class="card"><div class="card-header"><div class="card-title">Top Customer Activity</div></div><div class="card-body" style="padding:16px;"><div style="position:relative;height:200px;">{% if top_customer_labels %}<canvas id="topCustChart"></canvas>{% else %}<div class="empty-state"><p>No activity yet.</p></div>{% endif %}</div></div></div>
 </div>
-
-<!-- Most Active Customers + Largest Transfers -->
 <div class="grid grid-2 mb-8">
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">🏆 Most Active Customers</div>
-    </div>
-    <div class="table-wrap">
-      {% if most_active %}
-      <table class="smarttable">
-        <thead><tr><th>#</th><th>Customer</th><th>Account</th><th>Transactions</th></tr></thead>
-        <tbody>
-          {% for c in most_active %}
-          <tr>
-            <td class="text-muted text-sm">{{ loop.index }}</td>
-            <td style="font-weight:600;">{{ c.name }}</td>
-            <td class="font-mono text-sm">{{ c.account_number }}</td>
-            <td><span style="background:#DBEAFE;color:#1D4ED8;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12.5px;">{{ c.tx_count }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="empty-state"><div class="empty-icon">🏆</div><p>No customer activity yet.</p></div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">💎 Largest Transfers</div>
-    </div>
-    <div class="table-wrap">
-      {% if largest_transfers %}
-      <table class="smarttable">
-        <thead><tr><th>Sender</th><th>Receiver</th><th>Amount</th><th>Date</th></tr></thead>
-        <tbody>
-          {% for t in largest_transfers %}
-          <tr>
-            <td>
-              <div style="font-weight:600;font-size:13px;">{{ t.sender_name }}</div>
-              <div class="text-muted text-sm font-mono">{{ t.sender_account }}</div>
-            </td>
-            <td>
-              <div style="font-weight:600;font-size:13px;">{{ t.receiver_name }}</div>
-              <div class="text-muted text-sm font-mono">{{ t.receiver_account }}</div>
-            </td>
-            <td class="font-mono" style="font-weight:700;color:var(--primary);">৳{{ "%.2f"|format(t.amount) }}</td>
-            <td class="text-muted text-sm">{{ t.timestamp.strftime('%b %d, %Y') }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="empty-state"><div class="empty-icon">💎</div><p>No transfers yet.</p></div>
-      {% endif %}
-    </div>
-  </div>
+<div class="card"><div class="card-header"><div class="card-title">🏆 Most Active Customers</div></div>
+<div class="table-wrap">{% if most_active %}<table class="smarttable"><thead><tr><th>#</th><th>Customer</th><th>Account</th><th>Transactions</th></tr></thead><tbody>
+{% for c in most_active %}<tr><td class="text-muted text-sm">{{ loop.index }}</td><td style="font-weight:600;">{{ c.name }}</td><td class="font-mono text-sm">{{ c.account_number }}</td><td><span style="background:#DBEAFE;color:#1D4ED8;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12.5px;">{{ c.tx_count }}</span></td></tr>{% endfor %}
+</tbody></table>{% else %}<div class="empty-state"><p>No activity yet.</p></div>{% endif %}</div></div>
+<div class="card"><div class="card-header"><div class="card-title">💎 Largest Transfers</div></div>
+<div class="table-wrap">{% if largest_transfers %}<table class="smarttable"><thead><tr><th>From</th><th>To</th><th>Amount</th><th>Date</th></tr></thead><tbody>
+{% for t in largest_transfers %}<tr><td><div style="font-weight:600;font-size:13px;">{{ t.sender_name }}</div><div class="text-muted text-sm font-mono">{{ t.sender_account }}</div></td><td><div style="font-weight:600;font-size:13px;">{{ t.receiver_name }}</div><div class="text-muted text-sm font-mono">{{ t.receiver_account }}</div></td><td class="font-mono" style="font-weight:700;">৳{{ "%.2f"|format(t.amount) }}</td><td class="text-muted text-sm">{{ t.timestamp.strftime('%b %d, %Y') }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<div class="empty-state"><p>No transfers yet.</p></div>{% endif %}</div></div>
 </div>
-
-<!-- Quick Links -->
-<div class="card mb-8">
-  <div class="card-header"><div class="card-title">Quick Links</div></div>
-  <div class="card-body">
-    <div class="grid grid-4" style="gap:10px;">
-      <a href="{{ url_for('admin.users') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;">👥 Users &amp; Accounts</a>
-      <a href="{{ url_for('admin.transactions') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;">📋 Transactions</a>
-      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;">🔍 Audit Logs</a>
-      <a href="{{ url_for('admin.export_excel') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;">📊 Export Excel</a>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Daily Transaction Volume
-new Chart(document.getElementById('dailyChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ daily_labels | tojson }},
-    datasets: [{
-      label: 'Transactions',
-      data: {{ daily_counts | tojson }},
-      backgroundColor: 'rgba(37,99,235,0.75)',
-      borderRadius: 5, borderSkipped: false
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { beginAtZero: true, ticks: { stepSize: 1, font:{size:11} }, grid: { color:'#F1F5F9' } },
-      x: { ticks: { font:{size:10}, maxTicksLimit: 7 }, grid: { display:false } }
-    }
-  }
-});
-
-// Monthly dep vs withdrawal
-new Chart(document.getElementById('monthlyChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ monthly_labels | tojson }},
-    datasets: [
-      { label: 'Deposits', data: {{ monthly_deposits | tojson }}, backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 5, borderSkipped: false },
-      { label: 'Withdrawals', data: {{ monthly_withdrawals | tojson }}, backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 5, borderSkipped: false }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position:'bottom', labels:{ boxWidth:12, font:{size:11} } } },
-    scales: {
-      y: { beginAtZero: true, ticks: { font:{size:11} }, grid: { color:'#F1F5F9' } },
-      x: { ticks: { font:{size:11} }, grid: { display:false } }
-    }
-  }
-});
-
-// User Growth
-new Chart(document.getElementById('regChart'), {
-  type: 'line',
-  data: {
-    labels: {{ monthly_labels | tojson }},
-    datasets: [{
-      label: 'New Users',
-      data: {{ reg_counts | tojson }},
-      borderColor: '#1E3A8A', backgroundColor: 'rgba(30,58,138,0.08)',
-      borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#2563EB',
-      fill: true, tension: 0.35
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { beginAtZero: true, ticks: { stepSize: 1, font:{size:11} }, grid: { color:'#F1F5F9' } },
-      x: { ticks: { font:{size:11} }, grid: { display:false } }
-    }
-  }
-});
-
-{% if top_customer_labels %}
-// Top Customer Activity
-new Chart(document.getElementById('topCustChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ top_customer_labels | tojson }},
-    datasets: [{
-      label: 'Transactions',
-      data: {{ top_customer_counts | tojson }},
-      backgroundColor: 'rgba(124,58,237,0.75)',
-      borderRadius: 5, borderSkipped: false
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    indexAxis: 'y',
-    scales: {
-      x: { beginAtZero: true, ticks: { stepSize: 1, font:{size:11} }, grid: { color:'#F1F5F9' } },
-      y: { ticks: { font:{size:11} }, grid: { display:false } }
-    }
-  }
-});
-{% endif %}
-</script>
-{% endblock %}
+new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:{{ daily_labels|tojson }},datasets:[{label:'Transactions',data:{{ daily_counts|tojson }},backgroundColor:'rgba(37,99,235,0.75)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F1F5F9'}},x:{ticks:{font:{size:10},maxTicksLimit:7},grid:{display:false}}}}});
+new Chart(document.getElementById('monthlyChart'),{type:'bar',data:{labels:{{ monthly_labels|tojson }},datasets:[{label:'Deposits',data:{{ monthly_deposits|tojson }},backgroundColor:'rgba(16,185,129,0.75)',borderRadius:5,borderSkipped:false},{label:'Withdrawals',data:{{ monthly_withdrawals|tojson }},backgroundColor:'rgba(239,68,68,0.75)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'#F1F5F9'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+new Chart(document.getElementById('regChart'),{type:'line',data:{labels:{{ monthly_labels|tojson }},datasets:[{label:'New Users',data:{{ reg_counts|tojson }},borderColor:'#1E3A8A',backgroundColor:'rgba(30,58,138,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563EB',fill:true,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F1F5F9'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+{% if top_customer_labels %}new Chart(document.getElementById('topCustChart'),{type:'bar',data:{labels:{{ top_customer_labels|tojson }},datasets:[{label:'Transactions',data:{{ top_customer_counts|tojson }},backgroundColor:'rgba(124,58,237,0.75)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F1F5F9'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});{% endif %}
+</script>{% endblock %}
